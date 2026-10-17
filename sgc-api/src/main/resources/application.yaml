@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: sgc-api
+  datasource:
+    url: jdbc:mysql://localhost:3306/cesde_sgc
+    username: root
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false

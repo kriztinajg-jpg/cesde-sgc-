@@ -1,0 +1,41 @@
+// Pega este contenido en https://dbdiagram.io/d para generar la imagen del diagrama
+// Versión sin tabla "usuario" (login y roles quedan para la fase 2)
+
+Table proceso {
+  id int [pk, increment]
+  nombre varchar(100) [not null]
+  tipo enum('estrategico','misional','apoyo','control') [not null, unique]
+  color_hex char(7)
+  orden tinyint [default: 0]
+}
+
+Table area {
+  id int [pk, increment]
+  proceso_id int [not null, ref: > proceso.id]
+  nombre varchar(120) [not null, unique]
+  descripcion varchar(255)
+  orden tinyint [default: 0]
+}
+
+Table categoria_documento {
+  id int [pk, increment]
+  nombre varchar(60) [not null, unique]
+  icono varchar(40)
+  orden tinyint [default: 0]
+}
+
+Table documento {
+  id int [pk, increment]
+  area_id int [not null, ref: > area.id]
+  categoria_id int [not null, ref: > categoria_documento.id]
+  titulo varchar(200) [not null]
+  descripcion varchar(500)
+  archivo_nombre varchar(255) [not null]
+  archivo_url varchar(500) [not null]
+  tipo_archivo varchar(20)
+  tamano_bytes bigint
+  version varchar(20) [not null, default: '1.0']
+  estado enum('vigente','obsoleto') [not null, default: 'vigente']
+  fecha_creacion datetime [default: `now()`]
+  fecha_actualizacion datetime [default: `now()`]
+}
