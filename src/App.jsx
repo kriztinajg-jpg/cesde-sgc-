@@ -1,25 +1,28 @@
-import { Link, Route, Routes } from "react-router-dom";
-import Home from "./pages/Home";
-import Area from "./pages/Area";
-import Documentos from "./pages/Documentos";
+import { useEffect } from 'react';
+import { Route, Routes, useLocation } from 'react-router-dom';
+import { CarpiProvider } from './components/Carpi';
+import { Cabecera, PieDePagina } from './components/Marco';
+import Home from './pages/Home';
+import VistaCategoria from './pages/VistaCategoria';
+import VistaProceso from './pages/VistaProceso';
 
-export default function App() {
-  return (
-    <>
-      <header className="bg-white shadow-sm">
-        <div className="mx-auto max-w-5xl px-6 py-4">
-          <Link to="/" className="text-2xl font-black tracking-tight text-[#E8317A]">
-            CESDE <span className="font-medium text-slate-500">· Sistema de Gestión de Calidad</span>
-          </Link>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-6 py-10">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/area/:areaId" element={<Area />} />
-          <Route path="/area/:areaId/categoria/:categoriaId" element={<Documentos />} />
-        </Routes>
-      </main>
-    </>
-  );
+function App() {
+    const { pathname } = useLocation();
+    useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+
+    return (
+        <CarpiProvider>
+            <Cabecera />
+            <main>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/proceso/:procesoId" element={<VistaProceso />} />
+                    <Route path="/proceso/:procesoId/categoria/:categoriaId" element={<VistaCategoria />} />
+                </Routes>
+            </main>
+            <PieDePagina />
+        </CarpiProvider>
+    );
 }
+
+export default App;
