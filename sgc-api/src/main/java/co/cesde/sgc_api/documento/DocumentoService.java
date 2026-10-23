@@ -195,7 +195,26 @@ public class DocumentoService {
         String mime = MIME.getOrDefault(partes.length > 2 ? partes[2] : "", "application/octet-stream");
         return new ArchivoDescarga(new PathResource(ruta), partes[1], mime);
     }
+    /** Elimina el registro de la base de datos y el archivo guardado en disco. */
+    public void eliminar(int id) {
+        List<String> rutas = jdbc.query(
+                "SELECT archivo_url FROM documento WHERE id = ?",
+                (rs, n) -> rs.getString(1), id);
+        if (rutas.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "El documento no existe.");
+        }
+        jdbc.update("DELETE FROM documento WHERE id = ?", id);
 
+        // Con el registro ya eliminado, se borra el archivo del disco.
+        Path ruta = raiz.resolve(rutas.get(0)).normalize();
+        if (ruta.startsWith(raiz)) {
+            try {
+                Files.deleteIfExists(ruta);
+            } catch (IOException e) {
+                // El registro ya no existe; si el archivo no se pudo borrar, no es un error para el usuario.
+            }
+        }
+    }
     // ---------- utilidades ----------
 
     private void existe(String tabla, int id, String mensaje) {
