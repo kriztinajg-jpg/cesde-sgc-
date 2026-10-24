@@ -23,7 +23,7 @@ function Edificio({ id, x, w, h, tipo, atenuado, alEntrar }) {
         ventanas.push(<rect key={`${r}-${k}`} className={`win${(r * 7 + k * 3 + id) % 5 === 0 ? ' f' : ''}`} style={{ animationDelay: `${(r + k) * 0.7}s` }}
                             x={x + 10 + k * 28 + (w - 14 - cols * 28) / 2} y={y + 16 + r * 36} width="16" height="20" rx="3" />);
     }
-    const lineas = nombre.match(/.{1,15}(\s|$)/g).map((t) => t.trim());
+    const lineas = nombre.match(/.{1,18}(\s|$)/g).map((t) => t.trim());
     const entrar = (e) => alEntrar(id, e.currentTarget);
     return (
         <g className={`bld${atenuado ? ' dim' : ''}`} tabIndex={0} role="button" aria-label={nombre} onClick={entrar}
@@ -32,7 +32,19 @@ function Edificio({ id, x, w, h, tipo, atenuado, alEntrar }) {
             <rect x={x} y={y} width={w} height={h} rx="8" style={{ fill: c }} />
             {ventanas}
             <rect x={m - 11} y="396" width="22" height="34" rx="4" fill="#fff" opacity=".85" />
-            {lineas.map((t, i) => <text key={i} x={m} y={452 + i * 14} textAnchor="middle" fontSize="12" fontWeight="700" style={{ fill: 'var(--ink)' }}>{t}</text>)}
+            {lineas.map((t, i) => (
+                <text
+                    key={i}
+                    x={m}
+                    y={444 + i * 11}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fontWeight="800"
+                    fill="#0f172a"
+                >
+                    {t}
+                </text>
+            ))}
         </g>
     );
 }
