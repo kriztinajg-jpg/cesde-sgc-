@@ -30,6 +30,7 @@ public class DocumentoController {
     /** Lista documentos vigentes. Filtros opcionales: areaId, categoriaId, q (texto). */
     @GetMapping
     public List<DocumentoDto> listar(
+            /*oma este valor de la URL (lo que va después del ?) y pásalo como variable al metodo*/
             @RequestParam(name = "areaId", required = false) Integer areaId,
             @RequestParam(name = "categoriaId", required = false) Integer categoriaId,
             @RequestParam(name = "q", required = false) String q) {

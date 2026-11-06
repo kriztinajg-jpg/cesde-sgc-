@@ -7,7 +7,7 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-    ddl-auto: none
+      ddl-auto: none
     open-in-view: false
   servlet:
     multipart:
@@ -17,8 +17,17 @@ spring:
 server:
   error:
     include-message: always
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
 
 # Carpeta donde se guardan los archivos subidos (no se sube a Git)
 app:
   storage:
     dir: ${STORAGE_DIR:uploads}
+  admin:
+    email: ${ADMIN_EMAIL:admin@cesde.edu.co}
+    password: ${ADMIN_PASSWORD:}
