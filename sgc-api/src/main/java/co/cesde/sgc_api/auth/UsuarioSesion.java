@@ -2,6 +2,9 @@ package co.cesde.sgc_api.auth;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 /** Datos del usuario que ha iniciado sesión y sus permisos. */
 public record UsuarioSesion(
         int id,
@@ -23,5 +26,12 @@ public record UsuarioSesion(
     /** El administrador ve todas las áreas; los demás, solo las que se les otorgó. */
     public boolean puedeVerArea(int areaId) {
         return esAdministrador() || areas.contains(areaId);
+    }
+
+    /** Corta la petición con 403 si el usuario no es administrador. */
+    public void exigirAdministrador() {
+        if (!esAdministrador()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo un administrador puede hacer esto.");
+        }
     }
 }
