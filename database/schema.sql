@@ -7,6 +7,7 @@ CREATE DATABASE IF NOT EXISTS cesde_sgc
   COLLATE utf8mb4_unicode_ci;
 USE cesde_sgc;
 
+DROP TABLE IF EXISTS usuario_area;
 DROP TABLE IF EXISTS documento;
 DROP TABLE IF EXISTS usuario;
 DROP TABLE IF EXISTS categoria_documento;
