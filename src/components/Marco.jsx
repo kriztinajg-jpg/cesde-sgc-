@@ -1,15 +1,33 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AREAS, CATEGORIAS } from '../data/estructura';
 import { listarDocumentos } from '../services/documentosApi';
 
-// Encabezado con buscador optimizado (lupa a la derecha y sin Ctrl+K)
+// Encabezado con buscador optimizado, detección de ruta y estado de usuario activo
 export function Cabecera() {
     const [q, setQ] = useState('');
     const [docs, setDocs] = useState([]);
-    const [usuario] = useState(null);
+    const [usuario, setUsuario] = useState(null);
     const navigate = useNavigate();
+    const location = useLocation();
     const texto = q.trim().toLowerCase();
+
+    // Cargar sesión guardada en localStorage
+    useEffect(() => {
+        const sesionGuardada = localStorage.getItem('usuarioSGC');
+        if (sesionGuardada) {
+            try {
+                const datosUsuario = JSON.parse(sesionGuardada);
+                const nombreFormateado = datosUsuario.email ? datosUsuario.email.split('@')[0] : 'Usuario';
+                setUsuario({
+                    nombre: nombreFormateado.charAt(0).toUpperCase() + nombreFormateado.slice(1),
+                    rol: datosUsuario.rol || 'ADMIN'
+                });
+            } catch (e) {
+                console.error('Error al leer sesión:', e);
+            }
+        }
+    }, [location.pathname]);
 
     useEffect(() => {
         if (texto.length < 2) return undefined;
@@ -21,6 +39,14 @@ export function Cabecera() {
     const documentos = texto.length >= 2 ? docs.slice(0, 6) : [];
     const ir = (ruta) => { setQ(''); navigate(ruta); };
 
+    const esPaginaLogin = location.pathname === '/login';
+
+    const cerrarSesion = () => {
+        localStorage.removeItem('usuarioSGC');
+        setUsuario(null);
+        navigate('/');
+    };
+
     return (
         <header className="glass-header-container">
             <div className="glass-header">
@@ -30,7 +56,7 @@ export function Cabecera() {
                     <span className="brand-subtitle">Ciudad CESDE</span>
                 </div>
 
-                {/* Buscador Central (Input primero, lupa a la derecha) */}
+                {/* Buscador Central */}
                 <div className="search-zone">
                     <div className="search-box-pill">
                         <input
@@ -58,15 +84,26 @@ export function Cabecera() {
                     <a className="external-link-btn" href="https://cesde.edu.co" target="_blank" rel="noopener noreferrer">cesde.edu.co ↗</a>
 
                     {usuario ? (
-                        <div className="user-badge">
+                        <div className="user-badge flex items-center gap-2">
                             <div className="user-avatar">{usuario.nombre[0]}</div>
                             <div className="user-info">
                                 <span className="user-name">{usuario.nombre}</span>
                                 <span className="user-role">({usuario.rol})</span>
                             </div>
+                            <button
+                                onClick={cerrarSesion}
+                                title="Cerrar sesión"
+                                className="ml-2 text-xs opacity-70 hover:opacity-100 transition-opacity"
+                            >
+                                🚪
+                            </button>
                         </div>
+                    ) : esPaginaLogin ? (
+                        <button className="login-btn-pill" onClick={() => navigate('/')}>
+                            <span>🏠 Volver al inicio</span>
+                        </button>
                     ) : (
-                        <button className="login-btn-pill" onClick={() => alert('Abrir modal de login')}>
+                        <button className="login-btn-pill" onClick={() => navigate('/login')}>
                             <span className="avatar-placeholder">👤</span>
                             <span>Iniciar sesión</span>
                         </button>
