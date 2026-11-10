@@ -12,5 +12,6 @@ public record DocumentoDto(
         Long tamanoBytes,
         String version,
         String estado,
-        String fechaActualizacion) {
+        String fechaActualizacion,
+        boolean restringido) {
 }

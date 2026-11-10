@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCarpi } from '../components/Carpi';
+import { useSesion } from '../context/Sesion';
 import { AREAS, CATEGORIAS, areaInfo } from '../data/estructura';
 import { listarDocumentos } from '../services/documentosApi';
 
@@ -10,7 +11,8 @@ export default function VistaProceso() {
     const navigate = useNavigate();
     const { decir } = useCarpi();
     const areaId = Number(procesoId);
-    const existe = Boolean(AREAS[areaId]);
+    const { puedeVerArea } = useSesion();
+    const existe = Boolean(AREAS[areaId]) && puedeVerArea(areaId);
     const [docs, setDocs] = useState(null);
 
     useEffect(() => {
@@ -26,7 +28,7 @@ export default function VistaProceso() {
         if (docs) decir(docs.length ? 'Elige una carpeta. ¡Las vacías esperan su primer documento!' : 'Este archivador aún está vacío. ¡Abre una carpeta y sube algo!');
     }, [docs, decir]);
 
-    if (!existe) return <p>No encontramos esa área. <Link to="/" className="back">← Volver a la ciudad</Link></p>;
+    if (!existe) return <p>No encontramos esa área o no tienes acceso a ella. <Link to="/" className="back">← Volver a la ciudad</Link></p>;
     const { nombre, proceso } = areaInfo(areaId);
     const cuenta = (catId) => (docs || []).filter((d) => d.categoriaId === catId).length;
 
