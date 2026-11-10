@@ -5,6 +5,7 @@ import { Cabecera, PieDePagina } from './components/Marco';
 import Home from './pages/Home';
 import VistaCategoria from './pages/VistaCategoria';
 import VistaProceso from './pages/VistaProceso';
+import Login from './pages/Login'; //
 
 function App() {
     const { pathname } = useLocation();
@@ -17,6 +18,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/proceso/:procesoId" element={<VistaProceso />} />
+                    <Route path="/login" element={<Login />} />
                     <Route path="/proceso/:procesoId/categoria/:categoriaId" element={<VistaCategoria />} />
                 </Routes>
             </main>
