@@ -1,44 +1,32 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useSesion } from '../context/Sesion';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [clave, setClave] = useState('');
-    const [rol, setRol] = useState('ADMIN');
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
     const navigate = useNavigate();
+    const ubicacion = useLocation();
+    const { usuario, cargando: cargandoSesion, iniciarSesion } = useSesion();
+    const destino = ubicacion.state?.desde || '/';
+
+    // Si ya hay sesión, no tiene sentido ver el login
+    if (!cargandoSesion && usuario) return <Navigate to={destino} replace />;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setCargando(true);
-
         try {
-            // Intentamos autenticar con la API
-            const response = await fetch('http://localhost:8080/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, clave, rol }),
-            });
-
-            if (response.ok) {
-                const data = await response.json().catch(() => ({}));
-                localStorage.setItem('usuarioSGC', JSON.stringify({
-                    email: data.email || email,
-                    rol: data.rol || rol
-                }));
-            } else {
-                // Si la BD rebota el usuario, permitimos el paso de prueba
-                localStorage.setItem('usuarioSGC', JSON.stringify({ email, rol }));
-            }
+            await iniciarSesion(email.trim(), clave);
+            navigate(destino, { replace: true });
         } catch (err) {
-            // Si el backend no responde, también permitimos el paso de prueba
-            localStorage.setItem('usuarioSGC', JSON.stringify({ email, rol }));
+            setError(err.message);
+            setClave('');
         } finally {
             setCargando(false);
-            // Redirige siempre a la pantalla principal con los edificios
-            navigate('/');
         }
     };
 
@@ -64,10 +52,10 @@ export default function Login() {
                     <div className="relative z-10 mt-16">
                         <div className="p-6 bg-black/30 backdrop-blur-md rounded-2xl border border-white/10">
                             <p className="font-bold text-pink-50 text-sm mb-1.5 flex items-center gap-2">
-                                <span>🔐</span> Autenticación por Niveles de Seguridad
+                                <span>🔐</span> Acceso según tu perfil
                             </p>
                             <p className="text-xs text-pink-200/80 leading-relaxed">
-                                Seleccione su rol autorizado (Administrador, Lector o Consultor) para interactuar con los módulos correspondientes.
+                                Tu perfil (Administrador, Consultor o Lector) y las áreas que te asignaron definen lo que puedes ver y hacer en la plataforma.
                             </p>
                         </div>
                     </div>
@@ -80,39 +68,26 @@ export default function Login() {
                             Iniciar Sesión
                         </h2>
                         <p className="text-sm text-slate-400 mt-2">
-                            Ingrese sus credenciales institucionales para habilitar su sesión.
+                            Ingresa tus credenciales institucionales para habilitar tu sesión.
                         </p>
                     </div>
 
                     {error && (
-                        <div className="mb-6 p-4 bg-red-950/60 border border-red-800/60 rounded-xl text-red-300 text-sm font-medium text-center shadow-md">
+                        <div role="alert" className="mb-6 p-4 bg-red-950/60 border border-red-800/60 rounded-xl text-red-300 text-sm font-medium text-center shadow-md">
                             {error}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
-                                Rol de Usuario
-                            </label>
-                            <select
-                                value={rol}
-                                onChange={(e) => setRol(e.target.value)}
-                                className="w-full px-5 py-3.5 bg-[#141a29] border border-slate-700/80 rounded-xl text-white text-sm focus:outline-none focus:border-[#db2777] transition-colors shadow-inner"
-                            >
-                                <option value="ADMIN">Administrador (Gestión total del sistema)</option>
-                                <option value="LECTOR">Lector (Consulta y lectura de documentos)</option>
-                                <option value="CONSULTOR">Consultor (Reportes y auditoría institucional)</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
+                            <label htmlFor="login-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
                                 Correo Electrónico Institucional
                             </label>
                             <input
+                                id="login-email"
                                 type="email"
                                 required
+                                autoComplete="username"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="usuario@cesde.edu.co"
@@ -121,12 +96,14 @@ export default function Login() {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
+                            <label htmlFor="login-clave" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2.5">
                                 Contraseña
                             </label>
                             <input
+                                id="login-clave"
                                 type="password"
                                 required
+                                autoComplete="current-password"
                                 value={clave}
                                 onChange={(e) => setClave(e.target.value)}
                                 placeholder="••••••••"

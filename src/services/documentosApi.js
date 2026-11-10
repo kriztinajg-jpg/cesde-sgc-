@@ -1,30 +1,10 @@
 // Comunicación con la API de documentos del backend (sgc-api).
+import { pedir } from './http';
+
 const BASE = '/api/documentos';
 
 export const MAX_MB = 20;
 export const EXTENSIONES_PERMITIDAS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'png', 'jpg', 'jpeg'];
-
-async function leerError(res) {
-    try {
-        const cuerpo = await res.json();
-        if (cuerpo?.message) return cuerpo.message;
-    } catch {
-        // la respuesta no era JSON
-    }
-    if (res.status === 413) return `El archivo supera el tamaño máximo de ${MAX_MB} MB.`;
-    return `El servidor respondió con un error (${res.status}).`;
-}
-
-async function pedir(url, opciones) {
-    let res;
-    try {
-        res = await fetch(url, opciones);
-    } catch {
-        throw new Error('No se pudo conectar con el servidor. Revisa que el backend esté encendido.');
-    }
-    if (!res.ok) throw new Error(await leerError(res));
-    return res;
-}
 
 export async function listarDocumentos({ areaId, categoriaId, q } = {}) {
     const params = new URLSearchParams();
@@ -35,7 +15,7 @@ export async function listarDocumentos({ areaId, categoriaId, q } = {}) {
     return res.json();
 }
 
-export async function subirDocumento({ archivo, areaId, categoriaId, titulo, descripcion, version }) {
+export async function subirDocumento({ archivo, areaId, categoriaId, titulo, descripcion, version, restringido = false }) {
     const datos = new FormData();
     datos.append('archivo', archivo);
     datos.append('areaId', areaId);
@@ -43,6 +23,7 @@ export async function subirDocumento({ archivo, areaId, categoriaId, titulo, des
     datos.append('titulo', titulo);
     if (descripcion) datos.append('descripcion', descripcion);
     if (version) datos.append('version', version);
+    datos.append('restringido', restringido ? 'true' : 'false');
     const res = await pedir(BASE, { method: 'POST', body: datos });
     return res.json();
 }

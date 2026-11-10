@@ -1,51 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSesion } from '../context/Sesion';
 import { AREAS, CATEGORIAS } from '../data/estructura';
+import { ETIQUETA_ROL } from '../services/authApi';
 import { listarDocumentos } from '../services/documentosApi';
 
-// Encabezado con buscador optimizado, detección de ruta y estado de usuario activo
+// Encabezado con buscador, usuario conectado y cierre de sesión
 export function Cabecera() {
     const [q, setQ] = useState('');
     const [docs, setDocs] = useState([]);
-    const [usuario, setUsuario] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const { usuario, cargando, esAdministrador, puedeVerArea, cerrarSesion } = useSesion();
     const texto = q.trim().toLowerCase();
-
-    // Cargar sesión guardada en localStorage
-    useEffect(() => {
-        const sesionGuardada = localStorage.getItem('usuarioSGC');
-        if (sesionGuardada) {
-            try {
-                const datosUsuario = JSON.parse(sesionGuardada);
-                const nombreFormateado = datosUsuario.email ? datosUsuario.email.split('@')[0] : 'Usuario';
-                setUsuario({
-                    nombre: nombreFormateado.charAt(0).toUpperCase() + nombreFormateado.slice(1),
-                    rol: datosUsuario.rol || 'ADMIN'
-                });
-            } catch (e) {
-                console.error('Error al leer sesión:', e);
-            }
-        }
-    }, [location.pathname]);
+    const hayBusqueda = Boolean(usuario) && texto.length >= 2;
 
     useEffect(() => {
-        if (texto.length < 2) return undefined;
+        if (!hayBusqueda) return undefined;
         const t = setTimeout(() => listarDocumentos({ q: texto }).then(setDocs).catch(() => setDocs([])), 250);
         return () => clearTimeout(t);
-    }, [texto]);
+    }, [hayBusqueda, texto]);
 
-    const areas = texto ? Object.entries(AREAS).filter(([, n]) => n.toLowerCase().includes(texto)) : [];
-    const documentos = texto.length >= 2 ? docs.slice(0, 6) : [];
+    // Solo se buscan las áreas que esta persona puede ver; los documentos ya vienen filtrados por el backend
+    const areas = usuario && texto
+        ? Object.entries(AREAS).filter(([id, n]) => puedeVerArea(Number(id)) && n.toLowerCase().includes(texto))
+        : [];
+    const documentos = hayBusqueda ? docs.slice(0, 6) : [];
     const ir = (ruta) => { setQ(''); navigate(ruta); };
 
-    const esPaginaLogin = location.pathname === '/login';
-
-    const cerrarSesion = () => {
-        localStorage.removeItem('usuarioSGC');
-        setUsuario(null);
-        navigate('/');
-    };
+    async function salir() {
+        await cerrarSesion();
+        setQ('');
+        navigate('/login');
+    }
 
     return (
         <header className="glass-header-container">
@@ -56,49 +43,58 @@ export function Cabecera() {
                     <span className="brand-subtitle">Ciudad CESDE</span>
                 </div>
 
-                {/* Buscador Central */}
+                {/* Buscador Central (solo con sesión) */}
                 <div className="search-zone">
-                    <div className="search-box-pill">
-                        <input
-                            type="search"
-                            value={q}
-                            onChange={(e) => setQ(e.target.value)}
-                            placeholder="Buscar áreas o documentos…"
-                            aria-label="Buscar áreas o documentos"
-                            autoComplete="off"
-                        />
-                        <span className="search-icon" aria-hidden="true">🔍</span>
+                    {usuario && (
+                        <div className="search-box-pill">
+                            <input
+                                type="search"
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                                placeholder="Buscar áreas o documentos…"
+                                aria-label="Buscar áreas o documentos"
+                                autoComplete="off"
+                            />
+                            <span className="search-icon" aria-hidden="true">🔍</span>
 
-                        {texto && (
-                            <div id="res">
-                                {areas.map(([id, n]) => <button key={`a${id}`} onClick={() => ir(`/proceso/${id}`)}>{n} <i>· Área</i></button>)}
-                                {documentos.map((d) => <button key={`d${d.id}`} onClick={() => ir(`/proceso/${d.areaId}/categoria/${d.categoriaId}`)}>{d.titulo} <i>· {AREAS[d.areaId]} · {CATEGORIAS.find((c) => c.id === d.categoriaId)?.nombre}</i></button>)}
-                                {!areas.length && !documentos.length && <button disabled>Sin resultados. Prueba con otra palabra.</button>}
-                            </div>
-                        )}
-                    </div>
+                            {texto && (
+                                <div id="res">
+                                    {areas.map(([id, n]) => <button key={`a${id}`} onClick={() => ir(`/proceso/${id}`)}>{n} <i>· Área</i></button>)}
+                                    {documentos.map((d) => <button key={`d${d.id}`} onClick={() => ir(`/proceso/${d.areaId}/categoria/${d.categoriaId}`)}>{d.titulo} <i>· {AREAS[d.areaId]} · {CATEGORIAS.find((c) => c.id === d.categoriaId)?.nombre}</i></button>)}
+                                    {!areas.length && !documentos.length && <button disabled>Sin resultados. Prueba con otra palabra.</button>}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Zona de Usuario / Acceso Externo */}
                 <div className="user-zone">
                     <a className="external-link-btn" href="https://cesde.edu.co" target="_blank" rel="noopener noreferrer">cesde.edu.co ↗</a>
 
-                    {usuario ? (
-                        <div className="user-badge flex items-center gap-2">
-                            <div className="user-avatar">{usuario.nombre[0]}</div>
-                            <div className="user-info">
-                                <span className="user-name">{usuario.nombre}</span>
-                                <span className="user-role">({usuario.rol})</span>
+                    {usuario && (
+                        <>
+                            {esAdministrador && <Link className="external-link-btn" to="/usuarios">👥 Usuarios</Link>}
+                            <div className="user-badge flex items-center gap-2">
+                                <div className="user-avatar">{usuario.nombre.charAt(0).toUpperCase()}</div>
+                                <div className="user-info">
+                                    <span className="user-name">{usuario.nombre}</span>
+                                    <span className="user-role">({ETIQUETA_ROL[usuario.rol] ?? usuario.rol})</span>
+                                </div>
+                                <button
+                                    onClick={salir}
+                                    title="Cerrar sesión"
+                                    aria-label="Cerrar sesión"
+                                    className="ml-2 text-xs opacity-70 hover:opacity-100 transition-opacity"
+                                >
+                                    🚪
+                                </button>
                             </div>
-                            <button
-                                onClick={cerrarSesion}
-                                title="Cerrar sesión"
-                                className="ml-2 text-xs opacity-70 hover:opacity-100 transition-opacity"
-                            >
-                                🚪
-                            </button>
-                        </div>
-                    ) : esPaginaLogin ? (
+                        </>
+                    )}
+
+                    {/* Sin sesión: botón para ingresar (o para volver a la ciudad si ya estás en el login) */}
+                    {!usuario && !cargando && (location.pathname === '/login' ? (
                         <button className="login-btn-pill" onClick={() => navigate('/')}>
                             <span>🏠 Volver al inicio</span>
                         </button>
@@ -107,7 +103,7 @@ export function Cabecera() {
                             <span className="avatar-placeholder">👤</span>
                             <span>Iniciar sesión</span>
                         </button>
-                    )}
+                    ))}
                 </div>
             </div>
         </header>

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useSesion } from '../context/Sesion';
 import { areaInfo } from '../data/estructura';
 
 // [idÁrea, x, ancho, alto, tipo de edificio]
@@ -52,6 +53,7 @@ function Edificio({ id, x, w, h, tipo, atenuado, alEntrar }) {
 export default function CiudadCesde({ seleccion, alEntrar }) {
     const ref = useRef(null);
     const [origen, setOrigen] = useState(null);
+    const { usuario, puedeVerArea } = useSesion();
 
     // Al tocar un edificio, la cámara se acerca a él y luego se abre su área
     function entrar(id, el) {
@@ -70,7 +72,7 @@ export default function CiudadCesde({ seleccion, alEntrar }) {
                 <rect y="430" width="1200" height="90" fill="#8CCBB0" />
                 <rect y="466" width="1200" height="30" fill="#5b6272" />
                 <line className="dash" x1="0" y1="481" x2="1200" y2="481" stroke="#fff" strokeWidth="3" strokeDasharray="14 10" />
-                {EDIFICIOS.map(([id, x, w, h, tipo]) => (
+                {EDIFICIOS.filter(([id]) => !usuario || puedeVerArea(id)).map(([id, x, w, h, tipo]) => (
                     <Edificio key={id} id={id} x={x} w={w} h={h} tipo={tipo} alEntrar={entrar}
                               atenuado={!!seleccion && areaInfo(id).proceso.tipo !== seleccion} />
                 ))}

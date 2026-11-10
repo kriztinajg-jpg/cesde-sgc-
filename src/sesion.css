@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Cabecera con sesión: solo legibilidad. Usa la misma paleta de siempre.
+   Va DESPUÉS de index.css (ver main.jsx), así que no modifica ese archivo.
+   ========================================================================== */
+
+/* La franja de arriba tapa lo que pasa por detrás al hacer scroll,
+   para que los títulos no se mezclen con la cabecera */
+.glass-header-container {
+  top: 0;
+  padding: 12px 20px 8px;
+  margin-bottom: 12px;
+  background: var(--bg);
+}
+
+.glass-header {
+  gap: 16px;
+  flex-wrap: wrap;
+  background: rgba(18, 24, 38, 0.96);
+}
+
+.search-zone {
+  flex: 0 1 360px;
+  min-width: 200px;
+}
+
+.search-box-pill {
+  width: 100%;
+}
+
+.external-link-btn {
+  white-space: nowrap;
+}
+
+/* Usuario conectado: texto claro sobre la cabecera oscura */
+.user-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 30px;
+  padding: 4px 8px 4px 6px;
+  color: #fff;
+}
+
+.user-avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e91e63;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.user-name {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.user-role {
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+.user-badge button {
+  color: #fff;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  padding: 6px;
+  line-height: 1;
+}
+
+.user-badge button:hover {
+  background: rgba(233, 30, 99, 0.35);
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCarpi } from '../components/Carpi';
 import SubirDocumentoModal from '../components/SubirDocumentoModal';
+import { useSesion } from '../context/Sesion';
 import VisorDocumentoModal from '../components/VisorDocumentoModal';
 import { AREAS, CATEGORIAS, areaInfo } from '../data/estructura';
 import { formatearFecha, listarDocumentos, urlArchivo } from '../services/documentosApi';
@@ -10,15 +11,17 @@ import { formatearFecha, listarDocumentos, urlArchivo } from '../services/docume
 const desdeApi = (d) => ({
     id: d.id, codigo: `DOC-${String(d.id).padStart(4, '0')}`, nombre: d.titulo, descripcion: d.descripcion,
     version: d.version, fecha: d.fechaActualizacion, tipo: d.tipoArchivo, tamano: d.tamanoBytes, demo: false,
+    restringido: d.restringido,
 });
 
 export default function VistaCategoria() {
     const { procesoId, categoriaId } = useParams();
     const navigate = useNavigate();
     const { decir, confeti } = useCarpi();
+    const { esAdministrador, puedeDescargar, puedeVerArea } = useSesion();
     const areaId = Number(procesoId), catId = Number(categoriaId);
     const cat = CATEGORIAS.find((c) => c.id === catId);
-    const existe = Boolean(AREAS[areaId] && cat);
+    const existe = Boolean(AREAS[areaId] && cat && puedeVerArea(areaId));
 
     const [docs, setDocs] = useState(null);
     const [error, setError] = useState('');
@@ -41,7 +44,7 @@ export default function VistaCategoria() {
         if (docs) decir(docs.length ? 'Aquí tienes. Puedes ver, bajar o subir archivos.' : 'Esta carpeta está vacía… ¡sube el primer documento!', docs.length ? '' : 'sad');
     }, [docs, decir]);
 
-    if (!existe) return <p>No encontramos esa carpeta. <Link to="/" className="back">← Volver a la ciudad</Link></p>;
+    if (!existe) return <p>No encontramos esa carpeta o no tienes acceso a ella. <Link to="/" className="back">← Volver a la ciudad</Link></p>;
     const { nombre, proceso } = areaInfo(areaId);
 
     function alSubir(creado) {
@@ -68,7 +71,7 @@ export default function VistaCategoria() {
             </div>
             <div className="bar">
                 <input type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar en esta categoría…" aria-label="Buscar en esta categoría" />
-                <button className="btn" onClick={abrirSubida}>+ Subir documento</button>
+                {esAdministrador && <button className="btn" onClick={abrirSubida}>+ Subir documento</button>}
             </div>
             {aviso && <p role="status" className="okm">{aviso}</p>}
             {error && <p role="alert" className="err">{error}</p>}
@@ -79,10 +82,12 @@ export default function VistaCategoria() {
                         <thead><tr><th>Código</th><th>Nombre</th><th>Versión</th><th>Tipo</th><th>Actualizado</th><th>Acciones</th></tr></thead>
                         <tbody>{filtrados.map((d) => (
                             <tr key={d.id}>
-                                <td><code>{d.codigo}</code></td><td>{d.nombre}</td><td>{d.version}</td>
+                                <td><code>{d.codigo}</code></td><td>{d.restringido && <span title="Documento restringido" aria-label="Documento restringido">🔒 </span>}{d.nombre}</td><td>{d.version}</td>
                                 <td><span className="ty">{d.tipo ? d.tipo.toUpperCase() : '—'}</span></td><td>{formatearFecha(d.fecha)}</td>
-                                <td><button className="btn" onClick={() => setVer(d)}>Ver</button>{' '}
-                                    <a className="btn o" style={{ display: 'inline-block', textDecoration: 'none' }} href={urlArchivo(d.id, true)}>Descargar</a></td>
+                                <td><button className="btn" onClick={() => setVer(d)}>Ver</button>
+                                    {puedeDescargar && (
+                                        <>{' '}<a className="btn o" style={{ display: 'inline-block', textDecoration: 'none' }} href={urlArchivo(d.id, true)}>Descargar</a></>
+                                    )}</td>
                             </tr>))}</tbody>
                     </table></div>
                 ) : docs.length > 0 ? (
@@ -92,13 +97,13 @@ export default function VistaCategoria() {
                         <span className="ico">📂</span>
                         <h2>Aún no hay documentos en {cat.nombre}</h2>
                         <p>Esta categoría todavía no tiene archivos cargados para {nombre}.</p>
-                        <button className="btn" onClick={abrirSubida}>+ Subir documento</button>{' '}
+                        {esAdministrador && <><button className="btn" onClick={abrirSubida}>+ Subir documento</button>{' '}</>}
                         <button className="btn o" onClick={() => navigate(`/proceso/${areaId}`)}>Volver a categorías</button>
                     </div>
                 )}
 
             {ver && <VisorDocumentoModal doc={ver} onClose={() => setVer(null)} />}
-            {subiendo && <SubirDocumentoModal areaId={areaId} categoriaId={catId} categoriaNombre={cat.nombre} onClose={() => setSubiendo(false)} onSubido={alSubir} />}
+            {subiendo && esAdministrador && <SubirDocumentoModal areaId={areaId} categoriaId={catId} categoriaNombre={cat.nombre} onClose={() => setSubiendo(false)} onSubido={alSubir} />}
         </>
     );
 }

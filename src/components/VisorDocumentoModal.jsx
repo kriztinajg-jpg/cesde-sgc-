@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
+import { useSesion } from '../context/Sesion';
 import { formatearFecha, formatearTamano, urlArchivo } from '../services/documentosApi';
 
 const ES_IMAGEN = ['png', 'jpg', 'jpeg'];
 
 export default function VisorDocumentoModal({ doc, onClose }) {
+    const { puedeDescargar } = useSesion();
     useEffect(() => {
         const alTeclear = (e) => e.key === 'Escape' && onClose();
         window.addEventListener('keydown', alTeclear);
@@ -63,7 +65,7 @@ export default function VisorDocumentoModal({ doc, onClose }) {
                         </div>
                     ) : tipo === 'pdf' ? (
                         <iframe
-                            src={urlArchivo(doc.id)}
+                            src={urlArchivo(doc.id) + (puedeDescargar ? '' : '#toolbar=0')}
                             title={`Vista previa de ${doc.nombre}`}
                             className="w-full h-[28rem] rounded-xl border border-slate-200"
                         />
@@ -88,7 +90,7 @@ export default function VisorDocumentoModal({ doc, onClose }) {
                     >
                         Cerrar
                     </button>
-                    {tieneArchivo && (
+                    {tieneArchivo && puedeDescargar && (
                         <a
                             href={urlArchivo(doc.id, true)}
                             className="px-4 py-2 text-xs font-semibold bg-[#E71873] text-white rounded-lg hover:bg-pink-700 transition shadow-sm"
