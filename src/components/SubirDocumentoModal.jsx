@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { EXTENSIONES_PERMITIDAS, MAX_MB, formatearTamano, subirDocumento, validarArchivo } from '../services/documentosApi';
 
 const CAMPO =
@@ -9,19 +10,23 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
     const [version, setVersion] = useState('1.0');
     const [descripcion, setDescripcion] = useState('');
     const [archivo, setArchivo] = useState(null);
-    const [restringido, setRestringido] = useState(false);
     const [arrastrando, setArrastrando] = useState(false);
     const [error, setError] = useState('');
     const [enviando, setEnviando] = useState(false);
     const inputArchivo = useRef(null);
 
-    // Cerrar con la tecla Esc (salvo mientras se está subiendo)
+    // Cerrar con Esc (salvo mientras se sube) y bloquear el scroll de la página de atrás
     useEffect(() => {
         const alTeclear = (e) => {
             if (e.key === 'Escape' && !enviando) onClose();
         };
         window.addEventListener('keydown', alTeclear);
-        return () => window.removeEventListener('keydown', alTeclear);
+        const overflowPrevio = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => {
+            window.removeEventListener('keydown', alTeclear);
+            document.body.style.overflow = overflowPrevio;
+        };
     }, [enviando, onClose]);
 
     function elegirArchivo(nuevo) {
@@ -48,7 +53,6 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                 titulo: titulo.trim(),
                 descripcion: descripcion.trim(),
                 version: version.trim() || '1.0',
-                restringido,
             });
             onSubido(creado);
         } catch (err) {
@@ -57,15 +61,21 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
         }
     }
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+            style={{ zIndex: 9999 }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-subir"
+            onClick={(e) => { if (e.target === e.currentTarget && !enviando) onClose(); }}
         >
-            <form onSubmit={enviar} className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100">
-                <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+            <form
+                onSubmit={enviar}
+                className="modal-claro bg-white rounded-2xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100"
+            >
+                {/* Encabezado fijo */}
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-6 pb-4 shrink-0">
                     <div>
                         <h2 id="titulo-subir" className="text-xl font-bold text-slate-800">Subir documento</h2>
                         <p className="text-xs text-slate-500 mt-1">
@@ -77,13 +87,15 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                         onClick={onClose}
                         disabled={enviando}
                         aria-label="Cerrar"
-                        className="text-slate-400 hover:text-slate-600 text-xl font-bold px-2 py-1 rounded-lg hover:bg-slate-100 transition disabled:opacity-40"
+                        style={{ color: '#475569' }}
+                        className="shrink-0 text-xl font-bold w-10 h-10 grid place-items-center rounded-lg border border-slate-300 hover:bg-slate-100 transition disabled:opacity-40"
                     >
                         ✕
                     </button>
                 </div>
 
-                <div className="py-5 space-y-4">
+                {/* Contenido con scroll propio */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {/* Zona para soltar o elegir el archivo */}
                     <div>
                         <span className="block text-xs font-semibold text-slate-600 mb-1">Archivo</span>
@@ -102,7 +114,8 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                                     <button
                                         type="button"
                                         onClick={() => { setArchivo(null); if (inputArchivo.current) inputArchivo.current.value = ''; }}
-                                        className="text-xs font-semibold text-[#E71873] hover:underline mt-2"
+                                        style={{ color: '#E71873' }}
+                                        className="text-xs font-semibold hover:underline mt-2"
                                     >
                                         Quitar archivo
                                     </button>
@@ -113,7 +126,8 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                                     <button
                                         type="button"
                                         onClick={() => inputArchivo.current?.click()}
-                                        className="mt-2 text-xs font-semibold bg-white border border-slate-300 text-slate-700 px-3.5 py-2 rounded-lg hover:border-[#E71873] hover:text-[#E71873] transition"
+                                        style={{ color: '#334155' }}
+                                        className="mt-2 text-xs font-semibold bg-white border border-slate-300 px-3.5 py-2 rounded-lg hover:border-[#E71873] transition"
                                     >
                                         Elegir archivo
                                     </button>
@@ -168,14 +182,6 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                         />
                     </label>
 
-                    <label className="flex items-start gap-2 text-sm text-slate-700">
-                        <input type="checkbox" checked={restringido} onChange={(e) => setRestringido(e.target.checked)} className="mt-1 accent-[#E71873]" />
-                        <span>
-                            <b>🔒 Documento restringido</b>
-                            <span className="block text-xs text-slate-500">Solo lo verán los administradores y las personas con permiso para ver restringidos.</span>
-                        </span>
-                    </label>
-
                     {error && (
                         <p role="alert" className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
                             {error}
@@ -183,12 +189,14 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                     )}
                 </div>
 
-                <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+                {/* Botones fijos */}
+                <div className="flex items-center justify-end gap-3 border-t border-slate-100 p-4 shrink-0">
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={enviando}
-                        className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-40"
+                        style={{ color: '#334155' }}
+                        className="px-4 py-2 text-xs font-semibold border border-slate-300 hover:bg-slate-100 rounded-lg transition disabled:opacity-40"
                     >
                         Cancelar
                     </button>
@@ -201,6 +209,7 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                     </button>
                 </div>
             </form>
-        </div>
+        </div>,
+        document.body
     );
 }
