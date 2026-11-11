@@ -68,10 +68,13 @@ h1, h2, h3, .logo {
   margin: 0;
 }
 
-button {
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
+/* En la capa base para que las clases de Tailwind (text-slate-600, etc.) puedan cambiar el color */
+@layer base {
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
 }
 
 :focus-visible {
@@ -410,6 +413,14 @@ textarea {
   border-radius: 12px;
   padding: 9px 14px;
   width: 100%;
+}
+
+/* Las ventanas (modales) son siempre claras: sus campos también */
+.modal-claro input[type="text"],
+.modal-claro textarea {
+  background: #fff;
+  color: #1e293b;
+  border-color: #cbd5e1;
 }
 
 .btn {
@@ -1012,4 +1023,42 @@ td code {
     animation: none !important;
     transition: none !important;
   }
+}
+/* ==========================================================================
+   VENTANAS (MODALES): ARREGLOS GENERALES
+   ========================================================================== */
+
+/* Casillas y botones de opción: tamaño normal, no 100% de ancho */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  padding: 0;
+  flex: none;
+  accent-color: var(--pink);
+}
+
+/* Mientras haya una ventana abierta, el encabezado flotante queda por debajo */
+body:has([role="dialog"]) .glass-header-container {
+  z-index: 1;
+}
+
+/* Las ventanas son claras: sus campos también */
+[role="dialog"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[role="dialog"] textarea,
+[role="dialog"] select {
+  background: #fff;
+  color: #1e293b;
+  border-color: #cbd5e1;
+}
+
+[role="dialog"] input::placeholder,
+[role="dialog"] textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Si la ventana es más alta que la pantalla, hace scroll por dentro */
+[role="dialog"] > div,
+[role="dialog"] > form {
+  max-height: 90vh;
+  overflow-y: auto;
 }
