@@ -10,6 +10,7 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
     const [version, setVersion] = useState('1.0');
     const [descripcion, setDescripcion] = useState('');
     const [archivo, setArchivo] = useState(null);
+    const [restringido, setRestringido] = useState(false);
     const [arrastrando, setArrastrando] = useState(false);
     const [error, setError] = useState('');
     const [enviando, setEnviando] = useState(false);
@@ -53,6 +54,7 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                 titulo: titulo.trim(),
                 descripcion: descripcion.trim(),
                 version: version.trim() || '1.0',
+                restringido,
             });
             onSubido(creado);
         } catch (err) {
@@ -180,6 +182,21 @@ export default function SubirDocumentoModal({ areaId, categoriaId, categoriaNomb
                             rows={3}
                             className={`${CAMPO} mt-1 font-normal resize-none`}
                         />
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={restringido}
+                            onChange={(e) => setRestringido(e.target.checked)}
+                            className="mt-1 h-4 w-4 accent-[#E71873]"
+                        />
+                        <span className="text-xs text-slate-700">
+                            <b>🔒 Documento restringido</b>
+                            <span className="block text-slate-500 mt-0.5">
+                                Solo lo verán los administradores y las personas con permiso para ver restringidos.
+                            </span>
+                        </span>
                     </label>
 
                     {error && (
